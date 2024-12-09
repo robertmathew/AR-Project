@@ -1,17 +1,22 @@
 package org.example.project
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.ar.core.ArCoreApk
+import com.google.ar.core.Config
 import com.google.ar.core.Session
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException
 import org.example.project.helper.CameraPermissionHelper
 
 class MainActivity : ComponentActivity() {
+
+    private val viewModel: MainViewModel by viewModels()
 
     var mSession: Session? = null
 
@@ -19,22 +24,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            App()
-        }
-    }
-
-    fun maybeEnableArButton() {
-        ArCoreApk.getInstance().checkAvailabilityAsync(this) { availability ->
-            if (availability.isSupported) {
-
-            } else { // The device is unsupported or unknown.
-
-            }
+            App(viewModel)
         }
     }
 
     // requestInstall(Activity, true) will triggers installation of
-// Google Play Services for AR if necessary.
+    // Google Play Services for AR if necessary.
     var mUserRequestedInstall = true
 
     override fun onResume() {
@@ -56,6 +51,7 @@ class MainActivity : ComponentActivity() {
                         // Success: Safe to create the AR session.
                         mSession = Session(this)
                     }
+
                     ArCoreApk.InstallStatus.INSTALL_REQUESTED -> {
                         // When this method returns `INSTALL_REQUESTED`:
                         // 1. ARCore pauses this activity.
@@ -80,6 +76,27 @@ class MainActivity : ComponentActivity() {
             return  // mSession remains null, since session creation has failed.
         }
 
+        checkARSupport()
+        checkDepthApi()
+    }
+
+    fun checkARSupport() {
+        ArCoreApk.getInstance().checkAvailabilityAsync(this) { availability ->
+            viewModel.updateArStatus(availability.isSupported)
+        }
+    }
+
+    fun checkDepthApi() {
+        val config: Config = mSession!!.getConfig()
+
+        // Check whether the user's device supports the Depth API.
+        val isDepthApiSupported: Boolean = mSession!!.isDepthModeSupported(Config.DepthMode.AUTOMATIC)
+        if (isDepthApiSupported) {
+            config.setDepthMode(Config.DepthMode.AUTOMATIC)
+            viewModel.updateDepthStatus(true)
+
+        }
+        mSession!!.configure(config)
     }
 
     override fun onRequestPermissionsResult(
@@ -90,7 +107,11 @@ class MainActivity : ComponentActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, results)
         if (!CameraPermissionHelper.hasCameraPermission(this)) {
             // Use toast instead of snackbar here since the activity will exit.
-            Toast.makeText(this, "Camera permission is needed to run this application", Toast.LENGTH_LONG)
+            Toast.makeText(
+                this,
+                "Camera permission is needed to run this application",
+                Toast.LENGTH_LONG
+            )
                 .show()
             if (!CameraPermissionHelper.shouldShowRequestPermissionRationale(this)) {
                 // Permission denied with checking "Do not ask again".
@@ -110,5 +131,5 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun AppAndroidPreview() {
-    App()
+    App(viewModel = MainViewModel())
 }

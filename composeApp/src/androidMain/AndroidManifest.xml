@@ -6,6 +6,10 @@
     <!-- Limits app visibility in the Google Play Store to ARCore supported devices
          (https://developers.google.com/ar/devices). -->
     <uses-feature android:name="android.hardware.camera.ar" />
+
+    <!-- Restrict access to Depth-supported devices -->
+    <uses-feature android:name="com.google.ar.core.depth" />
+
     <uses-feature
         android:name="android.hardware.camera"
         android:required="true" />
@@ -17,6 +21,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
+
+        <meta-data android:name="com.google.ar.core" android:value="required" />
+
         <activity
             android:exported="true"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
@@ -27,6 +34,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>
